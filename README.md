@@ -30,6 +30,8 @@ _Demo app GIF coming in week 4._
 - **Day 1:** A struct copy is independent; a class copy is a shared reference.
   Copy-on-write gives value behaviour with cheap copies — the real copy
   happens only on the first write to a shared box.
+- **Day 2:** Optionals: TrimRange uses a failable initializer, 
+  so an invalid range can never exist. Tests use #require to unwrap safely.
 
 ## License
 MIT

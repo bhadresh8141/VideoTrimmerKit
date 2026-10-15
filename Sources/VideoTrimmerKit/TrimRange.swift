@@ -1,34 +1,30 @@
 import Foundation
 
-/// The part of a video the user wants to keep, in seconds.
-/// A struct (value type): every copy is independent, so one screen
-/// can never change another screen's range by mistake.
-public struct TrimRange: Equatable, Hashable, Sendable {
-    /// Start of the kept part, in seconds.
-    public private(set) var start: TimeInterval
-    /// End of the kept part, in seconds.
-    public private(set) var end: TimeInterval
-    /// Full length of the video, in seconds.
-    public let videoDuration: TimeInterval
+/// A part of a video to keep, in seconds. Always valid if it exists.
+public struct TrimRange: Equatable, Sendable {
+    public let start: Double            // where the cut begins
+    public let end: Double              // where the cut ends
 
-    /// Creates a range. Values outside the video are pulled back inside.
-    public init(start: TimeInterval, end: TimeInterval, videoDuration: TimeInterval) {
-        self.videoDuration = max(0, videoDuration)
-        let safeStart = min(max(0, start), self.videoDuration)
-        self.start = safeStart
-        self.end = min(max(safeStart, end), self.videoDuration)
+    /// Returns nil when the numbers don't make sense.
+    public init?(start: Double, end: Double, videoDuration: Double) {
+        guard start >= 0,               // can't start before the video
+              end > start,              // end must be after start
+              end <= videoDuration      // can't go past the video end
+        else { return nil }             // bad input → empty box
+        self.start = start
+        self.end = end
     }
 
-    /// How long the trimmed clip will be.
-    public var duration: TimeInterval { end - start }
+    /// Length of the kept part.
+    public var duration: Double { end - start }
 
-    /// Moves the start handle. It can never pass the end handle.
-    public mutating func moveStart(to newStart: TimeInterval) {
-        start = min(max(0, newStart), end)
-    }
-
-    /// Moves the end handle. It can never go before the start handle.
-    public mutating func moveEnd(to newEnd: TimeInterval) {
-        end = max(min(videoDuration, newEnd), start)
+    /// Build from text fields. Any bad text → nil.
+    public static func from(startText: String,
+                            endText: String,
+                            videoDuration: Double) -> TrimRange? {
+        guard let start = Double(startText),   // "abc" → nil → stop
+              let end = Double(endText)
+        else { return nil }
+        return TrimRange(start: start, end: end, videoDuration: videoDuration)
     }
 }

@@ -39,3 +39,20 @@ struct ThumbnailStripTests {
         #expect(b.times == [0, 1, 2, 3])
     }
 }
+
+@Test func validRangeIsCreated() throws {
+    // #require: fail the test if nil, else give the unwrapped value
+    let range = try #require(TrimRange(start: 1, end: 5, videoDuration: 10))
+    #expect(range.duration == 4)
+}
+
+// One test, many bad inputs: each pair must give nil
+@Test(arguments: [(-1.0, 5.0), (5.0, 5.0), (6.0, 2.0), (1.0, 11.0)])
+func invalidRangeIsNil(start: Double, end: Double) {
+    #expect(TrimRange(start: start, end: end, videoDuration: 10) == nil)
+}
+
+@Test func parsesTextFromUser() {
+    #expect(TrimRange.from(startText: "2", endText: "8", videoDuration: 10) != nil)
+    #expect(TrimRange.from(startText: "abc", endText: "8", videoDuration: 10) == nil)
+}
