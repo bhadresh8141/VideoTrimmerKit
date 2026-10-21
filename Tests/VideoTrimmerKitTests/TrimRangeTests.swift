@@ -1,41 +1,31 @@
 import Testing
 @testable import VideoTrimmerKit
 
-@Suite("TrimRange")
+@Suite("Day 1-2: TrimRange")
 struct TrimRangeTests {
-    @Test func copiesAreIndependent() {
-        let original = TrimRange(start: 2, end: 8, videoDuration: 10)
-        var copy = original          // a full, separate copy
-        copy.moveStart(to: 5)        // change only the copy
-        #expect(original.start == 2) // original is untouched
-        #expect(copy.start == 5)
+    @Test func validRangeIsCreated() throws {
+        let range = try #require(TrimRange(start: 1, end: 5, duration: 10))  // unwrap or fail
+        #expect(range.length == 4)
     }
 
-    @Test func valuesAreClampedInsideVideo() {
-        let range = TrimRange(start: -3, end: 50, videoDuration: 10)
-        #expect(range.start == 0)
+    @Test(arguments: [(-1.0, 5.0), (2.0, 11.0), (3.0, 3.2)])
+    func invalidRangeIsNil(start: Double, end: Double) {
+        #expect(TrimRange(start: start, end: end, duration: 10) == nil)
+    }
+
+    @Test func structCopiesAreIndependent() throws {
+        let original = try #require(TrimRange.full(duration: 10))
+        var copy = original                  // a photocopy
+        copy.setStart(4)                     // change only the copy
+        #expect(original.start == 0)         // the original is safe
+        #expect(copy.start == 4)
+    }
+
+    @Test func handlesAreClamped() throws {
+        var range = try #require(TrimRange.full(duration: 10))
+        range.setEnd(50)                     // too far right
         #expect(range.end == 10)
-        #expect(range.duration == 10)
-    }
-
-    @Test func handlesCannotCross() {
-        var range = TrimRange(start: 2, end: 6, videoDuration: 10)
-        range.moveStart(to: 9)       // try to pass the end handle
-        #expect(range.start == 6)
-        range.moveEnd(to: 1)         // try to go before the start handle
-        #expect(range.end == 6)
-    }
-}
-
-@Suite("ThumbnailStrip copy-on-write")
-struct ThumbnailStripTests {
-    @Test func copySharesStorageUntilWrite() {
-        let a = ThumbnailStrip(times: [0, 1, 2])
-        var b = a
-        #expect(b.sharesStorage(with: a))   // no copy yet (cheap)
-        b.append(3)                         // first write -> real copy
-        #expect(!b.sharesStorage(with: a))
-        #expect(a.times == [0, 1, 2])
-        #expect(b.times == [0, 1, 2, 3])
+        range.setStart(9.9)                  // too close to the end
+        #expect(range.start == 10 - TrimRange.minimumLength)
     }
 }

@@ -1,34 +1,37 @@
-import Foundation
+// Day 1 (struct = value type) + Day 2 (failable init returns an optional)
 
 /// The part of a video the user wants to keep, in seconds.
-/// A struct (value type): every copy is independent, so one screen
-/// can never change another screen's range by mistake.
-public struct TrimRange: Equatable, Hashable, Sendable {
-    /// Start of the kept part, in seconds.
-    public private(set) var start: TimeInterval
-    /// End of the kept part, in seconds.
-    public private(set) var end: TimeInterval
-    /// Full length of the video, in seconds.
-    public let videoDuration: TimeInterval
+/// It's a struct, so every copy is independent, like a photocopy.
+public struct TrimRange: Equatable, Sendable {
+    public private(set) var start: Double     // others can read it, but only we can change it
+    public private(set) var end: Double
+    public let duration: Double               // full length of the video
+    public static let minimumLength = 0.5     // a trim can't be shorter than half a second
 
-    /// Creates a range. Values outside the video are pulled back inside.
-    public init(start: TimeInterval, end: TimeInterval, videoDuration: TimeInterval) {
-        self.videoDuration = max(0, videoDuration)
-        let safeStart = min(max(0, start), self.videoDuration)
-        self.start = safeStart
-        self.end = min(max(safeStart, end), self.videoDuration)
+    /// Returns nil when the values make no sense (Day 2: optionals).
+    public init?(start: Double, end: Double, duration: Double) {
+        guard start >= 0,
+              end <= duration,
+              end - start >= Self.minimumLength else { return nil }
+        self.start = start
+        self.end = end
+        self.duration = duration
     }
 
-    /// How long the trimmed clip will be.
-    public var duration: TimeInterval { end - start }
-
-    /// Moves the start handle. It can never pass the end handle.
-    public mutating func moveStart(to newStart: TimeInterval) {
-        start = min(max(0, newStart), end)
+    /// The whole video, used as the starting trim.
+    public static func full(duration: Double) -> TrimRange? {
+        TrimRange(start: 0, end: duration, duration: duration)
     }
 
-    /// Moves the end handle. It can never go before the start handle.
-    public mutating func moveEnd(to newEnd: TimeInterval) {
-        end = max(min(videoDuration, newEnd), start)
+    public var length: Double { end - start }
+
+    /// Move the left handle. `mutating` because a struct changes itself.
+    public mutating func setStart(_ value: Double) {
+        start = clamp(value, 0, end - Self.minimumLength)          // Day 4 generic helper
+    }
+
+    /// Move the right handle.
+    public mutating func setEnd(_ value: Double) {
+        end = clamp(value, start + Self.minimumLength, duration)
     }
 }

@@ -1,4 +1,7 @@
+# Builds and tests the package on every push and pull request.
+# No code signing needed, so it works without a paid Apple account.
 name: CI
+
 on:
   push:
     branches: [main]
@@ -6,10 +9,12 @@ on:
 
 jobs:
   test:
-    runs-on: macos-15            # GitHub's free macOS machine
+    runs-on: macos-15                 # GitHub's macOS machine with Xcode installed
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4     # download the code
       - name: Show Swift version
         run: swift --version
-      - name: Build and test (no code signing needed)
+      - name: Build
+        run: swift build
+      - name: Test
         run: swift test

@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "VideoTrimmerKit",
-    platforms: [.iOS(.v17), .macOS(.v14)],
+    platforms: [.iOS(.v17), .macOS(.v14)],          // async AVFoundation APIs + Swift Testing
     products: [
         .library(name: "VideoTrimmerKit", targets: ["VideoTrimmerKit"])
     ],

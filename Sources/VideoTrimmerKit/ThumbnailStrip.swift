@@ -1,40 +1,32 @@
-import Foundation
+// Day 1: copy-on-write (COW) + Day 4: generic over the frame type
 
-/// A list of thumbnail times shown under the trimmer.
-/// It behaves like a value type, but uses copy-on-write (CoW):
-/// copies share one storage box until someone changes their copy.
-public struct ThumbnailStrip: Sendable {
-    /// The shared box. A class, so many copies can point to the same one.
-    final class Storage: @unchecked Sendable {
-        // @unchecked is safe here: we only change `times` after
-        // isKnownUniquelyReferenced says nobody else holds this box.
-        var times: [TimeInterval]
-        init(times: [TimeInterval]) { self.times = times }
+/// A list of thumbnail frames that copies its storage only when needed.
+/// Like sharing one notebook with a friend: you only photocopy it
+/// when one of you wants to write in it.
+public struct ThumbnailStrip<Frame> {
+    /// The real data lives in a class (shared by reference).
+    final class Storage {
+        var frames: [Frame]
+        init(_ frames: [Frame]) { self.frames = frames }
     }
 
     private var storage: Storage
 
-    public init(times: [TimeInterval] = []) {
-        storage = Storage(times: times)
+    public init(frames: [Frame] = []) {
+        storage = Storage(frames)
     }
 
-    /// Reading never copies.
-    public var times: [TimeInterval] { storage.times }
+    public var frames: [Frame] { storage.frames }   // reading never copies
+    public var count: Int { storage.frames.count }
 
-    /// Adds a thumbnail time. Copies the box first if it is shared.
-    public mutating func append(_ time: TimeInterval) {
-        makeUniqueIfNeeded()
-        storage.times.append(time)
-    }
-
-    private mutating func makeUniqueIfNeeded() {
-        if !isKnownUniquelyReferenced(&storage) {
-            storage = Storage(times: storage.times)
+    /// Writing: make a private copy first if someone else shares the storage.
+    public mutating func append(_ frame: Frame) {
+        if !isKnownUniquelyReferenced(&storage) {    // is anyone else holding it?
+            storage = Storage(storage.frames)        // yes, so take our own copy
         }
+        storage.frames.append(frame)
     }
 
-    /// Only for tests: true when two strips share the same box.
-    func sharesStorage(with other: ThumbnailStrip) -> Bool {
-        storage === other.storage
-    }
+    /// Only for tests: lets us check whether two strips share storage.
+    var storageID: ObjectIdentifier { ObjectIdentifier(storage) }
 }
